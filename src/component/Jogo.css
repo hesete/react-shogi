@@ -1,0 +1,140 @@
+body { 
+  font: 14px "Century Gothic", Futura, sans-serif; 
+  margin: auto auto auto auto; 
+  text-align: center;
+  
+} 
+ol, ul { 
+  padding-left: 30px; 
+} 
+.board-row:after { 
+  clear: both; 
+  content: ""; 
+  display: table; 
+} 
+.status { 
+  margin-bottom: 10px; 
+} 
+
+.board-row {
+  min-width: 577px;
+}
+.square { 
+  background: #fff; 
+  border: 1px solid #999; 
+  float: left; 
+ 
+  font-weight: bold; 
+  line-height: 34px; 
+  height: 70px; 
+  margin-right: -1px; 
+  margin-top: -1px; 
+  padding: 0; 
+  text-align: center; 
+  width: 65px; 
+  position: relative;
+} 
+.square:focus { 
+  outline: none; 
+} 
+.kbd-navigation .square:focus { 
+  background: #ddd; 
+} 
+.game { 
+  display: flex; 
+  flex-direction: row; 
+} 
+.game-info { 
+  margin-left: 20px; 
+} 
+.game-board {
+  margin: auto;
+}
+
+.final{
+  background: #BB8E5F;
+}
+
+.white{
+  transform: rotate(180deg);
+}
+
+.attack{
+  background: rgb(163, 236, 173);
+}
+
+.click{
+  background: rgb(224, 161, 90);
+}
+
+.black_control{
+  position: absolute;
+  font-size: 9;
+  color: rgb(165, 185, 230);
+  bottom: -10px;
+  left: 2px;
+}
+.black_force  {
+  position: absolute;
+  font-size: 4;
+  color: rgb(83, 113, 138);
+  bottom: -10px;
+  right: 2px;
+}
+.white_control{
+  position: absolute;
+  font-size: 9;
+  color: rgb(243, 186, 186);
+  top: -8px;
+  left: 2px;
+}
+.white_force  {
+  position: absolute;
+  font-size: 9;
+  color: rgb(241, 209, 172);
+  top: -8px;
+  right: 2px;
+}
+
+.black_bank {
+  margin: 5px 0 5px 0;
+  border: 2px solid;
+  height: 80px;
+}
+
+.white_bank { 
+  margin: 5px 0 5px 0;
+  border: 2px solid;
+  height: 80px;
+}
+.piece-box{
+  position: absolute;
+  z-index: 1;
+  top: 0px;
+  left: 0px;
+}
+
+.piece-wrap {
+  position: absolute;
+  z-index: 1;
+  font-size: 30px; 
+  background: rgba(100, 95, 88,0.5);
+  display: inline-block;
+  filter : blur(2px);
+  clip-path: polygon(50% 0%, 90% 20%, 98% 90%, 3% 90%, 10% 20%);
+  padding: 10px;
+  left: 7px;
+  top: 12px;
+}
+
+.piece{
+  position: absolute;
+  z-index: 2;
+  font-size: 30px; 
+  background: rgb(243, 194, 129);
+  display: inline-block;
+  clip-path: polygon(50% 0%, 90% 20%, 100% 90%, 0 90%, 10% 20%);
+  padding: 10px;
+  left: 7px;
+  top: 7px;
+}
