@@ -1,5 +1,4 @@
 import React from 'react';
-import { Statement } from 'typescript';
 import './Jogo.css';
 
 
@@ -7,8 +6,8 @@ const P: string[] = ["飛", "角", "金", "銀", "桂", "香", "歩", "玉", "�
 const L: string[] = ["r", "b", "g", "s", "n", "l", "p", "k", "d", "c", "", "t", "o", "m", "q", ""];
 const B: string[] = ["r", "b", "g", "s", "n", "l", "p", "R", "B", "G", "S", "N", "L", "P"];
 const Bsize: number = 9;
-//onst first_board: string = "lnsgkgsnl1r5b1ppppppppp999PPPPPPPPP1B5R1LNSGKGSNL";
-const first_board: string = "k899999998K";
+const first_board: string = "lnsgkgsnl1r5b1ppppppppp999PPPPPPPPP1B5R1LNSGKGSNL";
+//const first_board: string = "k899999998K";
 
 interface IProps_Piece {
   value: string
