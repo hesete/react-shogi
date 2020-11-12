@@ -1,15 +1,18 @@
 import React from 'react';
+import { Statement } from 'typescript';
 import './Jogo.css';
 
 
 const P: string[] = ["飛", "角", "金", "銀", "桂", "香", "歩", "玉", "竜", "馬", "", "全", "圭", "杏", "と", ""];
 const L: string[] = ["r", "b", "g", "s", "n", "l", "p", "k", "d", "c", "", "t", "o", "m", "q", ""];
-const B: string[] = ["r", "b", "g", "s", "n", "l", "p"];
+const B: string[] = ["r", "b", "g", "s", "n", "l", "p", "R", "B", "G", "S", "N", "L", "P"];
 const Bsize: number = 9;
-const first_board: string = "lnsgkgsnl1r5b1ppppppppp999PPPPPPPPP1B5R1LNSGKGSNL";
+//onst first_board: string = "lnsgkgsnl1r5b1ppppppppp999PPPPPPPPP1B5R1LNSGKGSNL";
+const first_board: string = "k899999998K";
 
 interface IProps_Piece {
   value: string
+  number: number
   className: string
 }
 interface IState_Piece {
@@ -17,14 +20,18 @@ interface IState_Piece {
 class Piece extends React.Component<IProps_Piece, IState_Piece> {
   render() {
     return (
-      <span className="piece-box">
-        <span className={this.props.className}>
-          {P[L.indexOf(this.props.value.toLowerCase())]}
+      this.props.number === 0 ?
+        <span className="piece-box"></span>
+        :
+        <span className="piece-box">
+          <span className={this.props.className}>
+            {P[L.indexOf(this.props.value.toLowerCase())]}
+          </span>
+          <span className={this.props.className.replace("piece", "piece-wrap")}>
+            {P[L.indexOf(this.props.value.toLowerCase())]}
+          </span>
+          {this.props.number > 1 && <span className="bank_number">{this.props.number}</span>}
         </span>
-        <span className={this.props.className.replace("piece", "piece-wrap")}>
-        {P[L.indexOf(this.props.value.toLowerCase())]}
-        </span>
-      </span>
     )
   }
 }
@@ -37,6 +44,7 @@ interface IProps_Square {
   white_control: number
   black_force: number
   white_force: number
+  number: number
   onClick: () => void
 }
 interface IState_Square {
@@ -45,7 +53,7 @@ class Square extends React.Component<IProps_Square, IState_Square> {
   render() {
     let class_string: string = "square";
     let class_piece: string = "";
-    if (this.props.value != "") {
+    if (this.props.value !== "") {
       class_piece = class_piece + " piece";
     }
     if (this.props.is_black) {
@@ -65,7 +73,7 @@ class Square extends React.Component<IProps_Square, IState_Square> {
         {/* <span className='white_force'>{this.props.white_force}</span> */}
         {/* <span className='black_control'>{this.props.black_control}</span> */}
         {/* <span className='white_control'>{this.props.white_control}</span> */}
-        <Piece className={class_piece} value={this.props.value} />
+        <Piece className={class_piece} value={this.props.value} number={this.props.number} />
       </button>
     )
   }
@@ -74,11 +82,12 @@ class Square extends React.Component<IProps_Square, IState_Square> {
 interface IProps_Board {
 }
 interface IState_Board {
+  is_checked: boolean
   squares: string[]
   selected: number
+  selected_bank: number
   turn_black: boolean
-  black_banck:number[]
-  white_banck:number[]
+  square_banck: number[]
   can_control: number[]
   black_control: number[]
   white_control: number[]
@@ -89,25 +98,26 @@ class Board extends React.Component<IProps_Board, IState_Board> {
   constructor(props: IProps_Board) {
     super(props);
     this.state = {
+      is_checked: false,
       squares: this.first_board(),
       selected: -1,
+      selected_bank: -1,
       turn_black: true,
       can_control: [],
-      black_banck: Array(B.length).fill(0),
-      white_banck: Array(B.length).fill(0),
+      square_banck: Array(B.length).fill(2),
       black_control: Array(Bsize * Bsize).fill(0),
       white_control: Array(Bsize * Bsize).fill(0),
       black_force: Array(Bsize * Bsize).fill(0),
       white_force: Array(Bsize * Bsize).fill(0),
     };
-    this.set_control_force();
+
   }
 
   first_board() {
     const squares = Array(Bsize * Bsize).fill("");
     let square_num: number = 0;
 
-    first_board.split("").map((x: string) => {
+    first_board.split("").forEach((x: string) => {
       let c = Number.parseInt(x);
       if (!isNaN(c)) {
         for (let z = c; z > 0; z--) { squares[square_num++] = ""; }
@@ -119,49 +129,113 @@ class Board extends React.Component<IProps_Board, IState_Board> {
   }
 
   is_black(s: string): boolean {
-    // ASCII
-    // A 65 - Z 90
-    // a 97 - z 122
-    // 0 48 - 9 57
-
+    // ASCII ; A 65 - Z 90 ; a 97 - z 122 ; 0 48 - 9 57
     let code = s.charCodeAt(0);
     return (isNaN(code) || code < 91 ? true : false)
   }
 
   handleClick(i: number): void {
     const squares = this.state.squares.slice();
-    if (this.state.selected === -1) {
-      // SELECT Piece
-      if (squares[i] !== "" &&
-        this.is_black(squares[i]) === this.state.turn_black
-      ) {
-        this.setState({ selected: i });
-        this.setState({ can_control: this.can_control(i) });
-
-      }
-    } else {
+    const square_banck = this.state.square_banck.slice();
+    if (this.state.can_control.indexOf(i) > -1) {
       // MOVE Piece
-      if (this.state.can_control.indexOf(i) > -1) {
+      if (this.state.selected > -1) {
+        if (squares[i] !== "") {
+          if (this.is_black(squares[this.state.selected])) {
+            ++square_banck[B.indexOf(squares[i].toUpperCase())];
+          } else {
+            ++square_banck[B.indexOf(squares[i].toLowerCase())];
+          }
+        }
         squares[i] = squares[this.state.selected];
         squares[this.state.selected] = "";
-        this.setState({
-          squares: squares,
-          selected: -1,
-          turn_black: !this.state.turn_black,
-          can_control: []
-        });
-      } else {
-        this.setState({
-          selected: -1,
-          can_control: []
-        });
+        //PUT Piece
+      } else if (this.state.selected_bank > -1) {
+        --square_banck[this.state.selected_bank];
+        squares[i] = B[this.state.selected_bank];
       }
+
+      let cf = this.set_control_force(this.state.squares);
+      let king = this.state.squares.indexOf(this.state.turn_black ? "k" : "K");
+      let control = (this.state.turn_black ? cf.black_control : cf.white_control);
+      let is_checked = false;
+      if (control[king] > 0) {
+        is_checked = true;
+      }
+
+      this.setState(this.set_control_force(squares));
+      this.setState({
+        squares: squares,
+        is_checked: is_checked,
+        square_banck: square_banck,
+        selected_bank: -1,
+        selected: -1,
+        turn_black: !this.state.turn_black,
+        can_control: []
+      });
+    } else if (squares[i] !== "" && this.is_black(squares[i]) === this.state.turn_black) {
+
+
+      this.setState({
+        selected: i,
+        selected_bank: -1,
+        can_control: this.can_control_checked(squares, i, this.can_control(i, true, true, squares)),
+      });
+    } else {
+      this.setState({
+        selected: -1,
+        selected_bank: -1,
+        can_control: []
+      });
     }
-    this.set_control_force();
+    //this.setState(this.set_control_force(squares));
   }
 
-  set_control_force() {
-    let squares = this.state.squares;
+  can_control_checked(squares: string[], i: number, temp_control: number[], in_board: boolean = true) {
+    //let temp_control: number[] = this.can_control(i, true, true, squares);
+    let can_control: number[] = [];
+    let isblak: boolean = this.state.turn_black;
+    temp_control.forEach((f: number) => {
+      let future = squares.slice();
+      if (in_board) {
+        future[f] = future[i];
+        future[i] = "";
+      } else {
+        future[f] = B[i];
+      }
+      let cf = this.set_control_force(future);
+      let king = future.indexOf(isblak ? "K" : "k");
+      let control = (isblak ? cf.white_control : cf.black_control);
+      if (control[king] === 0) {
+        can_control.push(f);
+      }
+    });
+    return can_control;
+  }
+
+  componentDidMount() {
+    this.setState(this.set_control_force(this.state.squares));
+  }
+
+  componentDidUpdate(prevProps: IProps_Board, prevState: IState_Board) {
+  }
+
+  handleClickBank(i: number): void {
+    if (this.state.square_banck[i] > 0 && this.is_black(B[i]) === this.state.turn_black) {
+      this.setState({ selected_bank: i, selected: -1, });
+      this.setState({ can_control: this.can_control_checked(this.state.squares, i, this.can_position(i, this.state.squares), false) });
+    } else {
+      this.setState({
+        selected_bank: -1,
+        selected: -1,
+        can_control: []
+      });
+    }
+
+  }
+
+  set_control_force(squares: string[]) {
+    //let squares = this.state.squares.slice();
     let black_control = Array(Bsize * Bsize).fill(0);
     let white_control = Array(Bsize * Bsize).fill(0);
     let black_force = Array(Bsize * Bsize).fill(0);
@@ -169,32 +243,45 @@ class Board extends React.Component<IProps_Board, IState_Board> {
 
     let control: number[] = [];
     let forces: number[] = [];
-    let is_black: boolean = true;
-    squares.map((s: string, i: number) => {
-      if (s !== "") {
-        control = this.can_control(i);
-        forces = this.can_control(i, false);
-        is_black = this.is_black(s);
-        if (is_black) {
-          control.map((c: number) => { ++black_control[c] })
-          forces.map((f: number) => { ++black_force[f] })
+    let kings: number[] = [];
+    squares.forEach((s: string, i: number) => {
+      if (s.toLowerCase() === "k") {
+        kings.push(i);
+      } else if (s !== "") {
+        control = this.can_control(i, true, false, squares);
+        forces = this.can_control(i, false, false, squares);
+        if (this.is_black(s)) {
+          control.forEach((c: number) => { ++black_control[c] })
+          forces.forEach((f: number) => { ++black_force[f] })
         } else {
-          control.map((c: number) => { ++white_control[c] })
-          forces.map((f: number) => { ++white_force[f] })
+          control.forEach((c: number) => { ++white_control[c] })
+          forces.forEach((f: number) => { ++white_force[f] })
         }
       }
     });
-    this.setState({
+    kings.forEach((i: number) => {
+      let reforce = (this.is_black(squares[i]) ? white_control : black_control);
+      control = this.can_control(i, true, false, squares, reforce);
+      forces = this.can_control(i, false, false, squares);
+      if (this.is_black(squares[i])) {
+        control.forEach((c: number) => { ++black_control[c] })
+        forces.forEach((f: number) => { ++black_force[f] })
+      } else {
+        control.forEach((c: number) => { ++white_control[c] })
+        forces.forEach((f: number) => { ++white_force[f] })
+      }
+    });
+    return {
       black_control: black_control,
       black_force: black_force,
       white_control: white_control,
       white_force: white_force
-    })
+    };
   }
 
-  can_control(n: number, limit: boolean = true): number[] {
-    let squares = this.state.squares;
-    let piece = this.state.squares[n].toLowerCase();
+  can_control(n: number, limit: boolean = true, move: boolean = true, squares: string[] = [], reforce: number[] = []): number[] {
+    //let squares = this.state.squares.slice();
+    let piece = squares[n].toLowerCase();
     let turn_black = this.is_black(squares[n]);
     let can_control: number[] = [];
     let x: number = n % Bsize;
@@ -236,13 +323,30 @@ class Board extends React.Component<IProps_Board, IState_Board> {
     }
 
     // Move 1 stem
+
+    let _reforce = reforce;
+    if (reforce.length === 0) {
+      if (this.is_black(squares[n])) {
+        _reforce = this.state.white_control;
+      } else {
+        _reforce = this.state.black_control;
+      }
+    }
     for (let i = 0; i < dx.length; ++i) {
       let xx = (turn_black ? x + dx[i] : x - dx[i]);
       let yy = (turn_black ? y + dy[i] : y - dy[i]);
       if (0 <= xx && xx < Bsize && 0 <= yy && yy < Bsize) {
         let num = (xx + (yy * Bsize));
-        if (!limit || (squares[num] === "" || turn_black !== this.is_black(squares[num])))
+        if (!limit || (squares[num] === "" || turn_black !== this.is_black(squares[num]))) {
+          if (piece === "k") {
+            if (_reforce[num] === 0)
+              can_control.push(num);
+          } else {
+            can_control.push(num);
+          }
+        } else if (!move && turn_black === this.is_black(squares[num])) {
           can_control.push(num);
+        }
       }
     }
 
@@ -252,9 +356,12 @@ class Board extends React.Component<IProps_Board, IState_Board> {
       let yy = (turn_black ? y + ny[i] : y - ny[i]);
       while (0 <= xx && xx < Bsize && 0 <= yy && yy < Bsize) {
         let num = (xx + (yy * Bsize));
-        if (!limit || (squares[num] === "" || turn_black !== this.is_black(squares[num])))
+        if (!limit || (squares[num] === "" || turn_black !== this.is_black(squares[num]))) {
           can_control.push(num);
-        if (limit && squares[num] != "")
+        } else if (!move && turn_black === this.is_black(squares[num])) {
+          can_control.push(num);
+        }
+        if (limit && squares[num] !== "")
           break;
         xx = (turn_black ? xx + nx[i] : xx - nx[i]);
         yy = (turn_black ? yy + ny[i] : yy - ny[i]);
@@ -262,12 +369,90 @@ class Board extends React.Component<IProps_Board, IState_Board> {
     }
 
 
-    return can_control;
+    return can_control.slice();
+  }
+
+  fu_check_mate(n: number, squares: string[]) {
+    //let squares = this.state.squares;
+    let x: number = n % Bsize;
+    let y: number = Math.trunc(n / Bsize);
+    let yy = (this.state.turn_black ? y - 1 : y + 1);
+    let k = (this.state.turn_black ? "k" : "K");
+    let king = x + (yy * Bsize);
+    let reforce = (this.state.turn_black ? this.state.white_control : this.state.black_control);
+    if (squares[king] === k) {
+      let king_control = this.can_control(king, true, true, squares);
+      if (king_control.length > 0) {
+        return false;
+      } else if (reforce[n] > 0) {
+        return false;
+      } else {
+        return true;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  can_position(n: number, squares: string[]) {
+    //let squares = this.state.squares;
+    let turn_black = this.state.turn_black;
+    let all_free: number[] = [];
+
+    if (B[n].toLowerCase() === "p") {
+      let not_position: number[] = [];
+      squares.forEach((p, i) => {
+        if (B[n] === p) not_position.push(i % Bsize);
+      });
+
+      squares.forEach((p, i) => {
+        let y: number = Math.trunc(i / Bsize);
+        let yy = (turn_black ? y : (Bsize - 1) - y);
+
+        if (p === "") {
+          if (
+            yy !== 0 &&
+            not_position.indexOf(i % Bsize) === -1 &&
+            this.fu_check_mate(i, squares) === false
+          ) {
+            all_free.push(i);
+          }
+        }
+      });
+    } else if (B[n].toLowerCase() === "n") {
+      squares.forEach((p, i) => {
+        let y: number = Math.trunc(i / Bsize);
+        let yy = (turn_black ? y : (Bsize - 1) - y);
+
+        if (p === "") {
+          if (yy !== 0 && yy !== 1) {
+            all_free.push(i);
+          }
+        }
+      });
+    } else if (B[n].toLowerCase() === "l") {
+      squares.forEach((p, i) => {
+        let y: number = Math.trunc(i / Bsize);
+        let yy = (turn_black ? y : (Bsize - 1) - y);
+
+        if (p === "") {
+          if (yy !== 0) {
+            all_free.push(i);
+          }
+        }
+      });
+    } else {
+      squares.forEach((p, i) => {
+        if (p === "") all_free.push(i);
+      });
+    }
+    return all_free;
   }
 
   renderSquare(i: number) {
     return (
       <Square
+        number={1}
         is_clicked={(this.state.selected === i)}
         is_black={this.is_black(this.state.squares[i])}
         can_control={(this.state.can_control.indexOf(i) > -1)}
@@ -280,18 +465,19 @@ class Board extends React.Component<IProps_Board, IState_Board> {
       />
     )
   }
-  renderBankSquare(p:string,black:boolean) {
+  renderBankSquare(i: number, n: number, is_black: boolean) {
     return (
       <Square
-        is_clicked={false}
-        is_black={black}
+        number={n}
+        is_clicked={(this.state.selected_bank === i)}
+        is_black={is_black}
         can_control={false}
-        value={p}
+        value={B[i]}
         black_control={0}
         white_control={0}
         black_force={0}
         white_force={0}
-        onClick={() => { alert(p) }}
+        onClick={() => { this.handleClickBank(i) }}
       />
     )
   }
@@ -302,13 +488,16 @@ class Board extends React.Component<IProps_Board, IState_Board> {
     let coluna = new Array<JSX.Element>();
     let white_bank = new Array<JSX.Element>();
     let black_bank = new Array<JSX.Element>();
-    B.map((p:string,i:number)=>{
-      let code = p.charCodeAt(0);
-      
+    B.forEach((p: string, i: number) => {
+      if (this.is_black(p)) {
+        black_bank = black_bank.concat(this.renderBankSquare(i, this.state.square_banck[i], true));
+      } else {
+        white_bank = white_bank.concat(this.renderBankSquare(i, this.state.square_banck[i], false));
+      }
     });
     for (let i = 0; i < (Bsize * Bsize); i++) {
       let x: number = i % Bsize;
-      let y: number = Math.trunc(i / Bsize);
+      //let y: number = Math.trunc(i / Bsize);
 
       coluna = coluna.concat(this.renderSquare(i));
       if (x === (Bsize - 1)) {
@@ -333,6 +522,7 @@ interface IState_Game {
 }
 class Game extends React.Component<IProps_Game, IState_Game> {
   render() {
+
     return (
       <div className="game">
         <div className="game-board">

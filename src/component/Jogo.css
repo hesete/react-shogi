@@ -138,3 +138,20 @@ ol, ul {
   left: 7px;
   top: 7px;
 }
+.black_bank .square,.white_bank .square{
+  border: 0;
+  margin: 5px;
+}
+
+.bank_number {
+  position: absolute;
+  z-index: 3;
+  line-height: 18px;
+  height: 18px;
+  width: 18px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+  top: 2px;
+  left: 45px;
+}
