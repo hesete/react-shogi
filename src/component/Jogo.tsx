@@ -103,7 +103,7 @@ class Board extends React.Component<IProps_Board, IState_Board> {
       selected_bank: -1,
       turn_black: true,
       can_control: [],
-      square_banck: Array(B.length).fill(2),
+      square_banck: Array(B.length).fill(0),
       black_control: Array(Bsize * Bsize).fill(0),
       white_control: Array(Bsize * Bsize).fill(0),
       black_force: Array(Bsize * Bsize).fill(0),
