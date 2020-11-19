@@ -6,8 +6,8 @@ const P: string[] = ["飛", "角", "金", "銀", "桂", "香", "歩", "玉", "�
 const L: string[] = ["r", "b", "g", "s", "n", "l", "p", "k", "d", "c", "", "t", "o", "m", "q", ""];
 const B: string[] = ["r", "b", "g", "s", "n", "l", "p", "R", "B", "G", "S", "N", "L", "P"];
 const Bsize: number = 9;
-//const first_board: string = "lnsgkgsnl1r5b1ppppppppp999PPPPPPPPP1B5R1LNSGKGSNL";
-const first_board: string = "k899999998K";
+const first_board: string = "lnsgkgsnl1r5b1ppppppppp999PPPPPPPPP1B5R1LNSGKGSNL";
+//const first_board: string = "k899999998K";
 
 interface IProps_Piece {
   value: string
@@ -108,7 +108,7 @@ class Board extends React.Component<IProps_Board, IState_Board> {
       selected_bank: -1,
       turn_black: true,
       can_control: [],
-      square_banck: Array(B.length).fill(5),
+      square_banck: Array(B.length).fill(0),
       black_control: Array(Bsize * Bsize).fill(0),
       white_control: Array(Bsize * Bsize).fill(0),
       black_force: Array(Bsize * Bsize).fill(0),
