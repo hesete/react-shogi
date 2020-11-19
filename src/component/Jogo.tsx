@@ -6,8 +6,8 @@ const P: string[] = ["飛", "角", "金", "銀", "桂", "香", "歩", "玉", "�
 const L: string[] = ["r", "b", "g", "s", "n", "l", "p", "k", "d", "c", "", "t", "o", "m", "q", ""];
 const B: string[] = ["r", "b", "g", "s", "n", "l", "p", "R", "B", "G", "S", "N", "L", "P"];
 const Bsize: number = 9;
-const first_board: string = "lnsgkgsnl1r5b1ppppppppp999PPPPPPPPP1B5R1LNSGKGSNL";
-//const first_board: string = "k899999998K";
+//const first_board: string = "lnsgkgsnl1r5b1ppppppppp999PPPPPPPPP1B5R1LNSGKGSNL";
+const first_board: string = "k899999998K";
 
 interface IProps_Piece {
   value: string
@@ -66,6 +66,9 @@ class Square extends React.Component<IProps_Square, IState_Square> {
     if (this.props.can_control) {
       class_string = class_string + " attack";
     }
+    if (["d", "c", "t", "o", "m", "q"].indexOf(this.props.value.toLowerCase()) > -1) {
+      class_string = class_string + " promoted";
+    }
     return (
       <button className={class_string} onClick={this.props.onClick}>
         {/* <span className='black_force'>  {this.props.black_force}</span> */}
@@ -105,7 +108,7 @@ class Board extends React.Component<IProps_Board, IState_Board> {
       selected_bank: -1,
       turn_black: true,
       can_control: [],
-      square_banck: Array(B.length).fill(0),
+      square_banck: Array(B.length).fill(5),
       black_control: Array(Bsize * Bsize).fill(0),
       white_control: Array(Bsize * Bsize).fill(0),
       black_force: Array(Bsize * Bsize).fill(0),
@@ -114,6 +117,7 @@ class Board extends React.Component<IProps_Board, IState_Board> {
 
   }
 
+  teste = () => { }
   first_board() {
     const squares = Array(Bsize * Bsize).fill("");
     let square_num: number = 0;
@@ -142,15 +146,15 @@ class Board extends React.Component<IProps_Board, IState_Board> {
     let ss: number = this.state.turn_black ? s : Bsize - s - 1;
 
     let piece = squares[selected].toLowerCase();
-    if(["r", "b", "s", "n", "l", "p"].indexOf(piece)>-1){
-      let promoted = L[(L.length/2)+L.indexOf(piece)]
-      if(this.state.turn_black) promoted = promoted.toUpperCase();
-      
-      if(["p","l"].indexOf(piece)>-1&&yy===0){
+    if (["r", "b", "s", "n", "l", "p"].indexOf(piece) > -1) {
+      let promoted = L[(L.length / 2) + L.indexOf(piece)]
+      if (this.state.turn_black) promoted = promoted.toUpperCase();
+
+      if (["p", "l"].indexOf(piece) > -1 && yy === 0) {
         return promoted;
-      }else if(piece==="n"&&yy<2){
+      } else if (piece === "n" && yy < 2) {
         return promoted;
-      }else if(["r", "b", "s", "n", "l", "p"].indexOf(piece)>-1&&(ss<3||yy<3)&&window.confirm("PROMOTE?")){
+      } else if (["r", "b", "s", "n", "l", "p"].indexOf(piece) > -1 && (ss < 3 || yy < 3) && window.confirm("PROMOTE?")) {
         return promoted;
       }
     }
@@ -165,7 +169,9 @@ class Board extends React.Component<IProps_Board, IState_Board> {
       if (this.state.selected > -1) {
         if (squares[i] !== "") {
           let piece = squares[i].toLowerCase();
-          if(["d", "c", "t", "o", "m", "q"].indexOf(piece)>-1){ piece = L[(L.indexOf(piece)-(L.length/2))];}
+          if (["d", "c", "t", "o", "m", "q"].indexOf(piece) > -1) {
+            piece = L[(L.indexOf(piece) - (L.length / 2))];
+          }
 
           if (this.is_black(squares[this.state.selected])) {
             ++square_banck[B.indexOf(piece.toUpperCase())];
@@ -255,8 +261,10 @@ class Board extends React.Component<IProps_Board, IState_Board> {
 
     let control = (this.state.turn_black ? white : black);
     let bank = (this.state.turn_black ? white_bank : black_bank);
+    let cf = this.set_control_force(squares);
+    let reforce = (this.state.turn_black ? cf.black_control : cf.white_control);
     control.forEach((i) => {
-      if ((this.can_control_checked(squares, i, this.can_control(i, true, true, squares), true, !this.state.turn_black)).length > 0) {
+      if ((this.can_control_checked(squares, i, this.can_control(i, true, true, squares, reforce), true, !this.state.turn_black,)).length > 0) {
         checkmate = false
       }
     });
@@ -268,10 +276,11 @@ class Board extends React.Component<IProps_Board, IState_Board> {
     return checkmate;
   }
 
-  can_control_checked(squares: string[], i: number, temp_control: number[], in_board: boolean = true, isblak: boolean = true): number[] {
-    //let temp_control: number[] = this.can_control(i, true, true, squares);
+  can_control_checked(squares: string[], i: number, temp_control: number[],
+    in_board: boolean = true, isblak: boolean = true
+  ): number[] {
     let can_control: number[] = [];
-    //let isblak: boolean = this.state.turn_black;
+
     temp_control.forEach((f: number) => {
       let future = squares.slice();
       if (in_board) {
