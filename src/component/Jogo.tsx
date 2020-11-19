@@ -82,6 +82,7 @@ interface IProps_Board {
 }
 interface IState_Board {
   is_checked: boolean
+  is_checked_mate: boolean
   squares: string[]
   selected: number
   selected_bank: number
@@ -98,6 +99,7 @@ class Board extends React.Component<IProps_Board, IState_Board> {
     super(props);
     this.state = {
       is_checked: false,
+      is_checked_mate: false,
       squares: this.first_board(),
       selected: -1,
       selected_bank: -1,
@@ -133,6 +135,28 @@ class Board extends React.Component<IProps_Board, IState_Board> {
     return (isNaN(code) || code < 91 ? true : false)
   }
 
+  promote_piece(n: number, selected: number, squares: string[]): string {
+    let y: number = Math.trunc(n / Bsize);
+    let s: number = Math.trunc(selected / Bsize);
+    let yy: number = this.state.turn_black ? y : Bsize - y - 1;
+    let ss: number = this.state.turn_black ? s : Bsize - s - 1;
+
+    let piece = squares[selected].toLowerCase();
+    if(["r", "b", "s", "n", "l", "p"].indexOf(piece)>-1){
+      let promoted = L[(L.length/2)+L.indexOf(piece)]
+      if(this.state.turn_black) promoted = promoted.toUpperCase();
+      
+      if(["p","l"].indexOf(piece)>-1&&yy===0){
+        return promoted;
+      }else if(piece==="n"&&yy<2){
+        return promoted;
+      }else if(["r", "b", "s", "n", "l", "p"].indexOf(piece)>-1&&(ss<3||yy<3)&&window.confirm("PROMOTE?")){
+        return promoted;
+      }
+    }
+    return squares[selected];
+  }
+
   handleClick(i: number): void {
     const squares = this.state.squares.slice();
     const square_banck = this.state.square_banck.slice();
@@ -140,13 +164,17 @@ class Board extends React.Component<IProps_Board, IState_Board> {
       // MOVE Piece
       if (this.state.selected > -1) {
         if (squares[i] !== "") {
+          let piece = squares[i].toLowerCase();
+          if(["d", "c", "t", "o", "m", "q"].indexOf(piece)>-1){ piece = L[(L.indexOf(piece)-(L.length/2))];}
+
           if (this.is_black(squares[this.state.selected])) {
-            ++square_banck[B.indexOf(squares[i].toUpperCase())];
+            ++square_banck[B.indexOf(piece.toUpperCase())];
           } else {
-            ++square_banck[B.indexOf(squares[i].toLowerCase())];
+            ++square_banck[B.indexOf(piece.toLowerCase())];
           }
         }
-        squares[i] = squares[this.state.selected];
+
+        squares[i] = this.promote_piece(i, this.state.selected, squares);
         squares[this.state.selected] = "";
         //PUT Piece
       } else if (this.state.selected_bank > -1) {
@@ -154,18 +182,26 @@ class Board extends React.Component<IProps_Board, IState_Board> {
         squares[i] = B[this.state.selected_bank];
       }
 
-      let cf = this.set_control_force(this.state.squares);
-      let king = this.state.squares.indexOf(this.state.turn_black ? "k" : "K");
+      let cf = this.set_control_force(squares);
+      let king = squares.indexOf(this.state.turn_black ? "k" : "K");
       let control = (this.state.turn_black ? cf.black_control : cf.white_control);
       let is_checked = false;
+      let is_checked_mate = false;
       if (control[king] > 0) {
         is_checked = true;
+        if (this.check_checkmate(squares)) {
+          is_checked_mate = true;
+          alert("Check Mate!")
+        } else {
+          alert("Check!")
+        }
       }
 
       this.setState(this.set_control_force(squares));
       this.setState({
         squares: squares,
         is_checked: is_checked,
+        is_checked_mate: is_checked_mate,
         square_banck: square_banck,
         selected_bank: -1,
         selected: -1,
@@ -178,7 +214,7 @@ class Board extends React.Component<IProps_Board, IState_Board> {
       this.setState({
         selected: i,
         selected_bank: -1,
-        can_control: this.can_control_checked(squares, i, this.can_control(i, true, true, squares)),
+        can_control: this.can_control_checked(squares, i, this.can_control(i, true, true, squares), true, this.state.turn_black),
       });
     } else {
       this.setState({
@@ -190,10 +226,52 @@ class Board extends React.Component<IProps_Board, IState_Board> {
     //this.setState(this.set_control_force(squares));
   }
 
-  can_control_checked(squares: string[], i: number, temp_control: number[], in_board: boolean = true) {
+  check_checkmate(squares: string[]): boolean {
+    let checkmate: boolean = true;
+    let black: number[] = [];
+    let white: number[] = [];
+    let black_bank: number[] = [];
+    let white_bank: number[] = [];
+
+    squares.forEach((x, i) => {
+      if (x !== "") {
+        if (this.is_black(x)) {
+          black.push(i);
+        } else {
+          white.push(i)
+        }
+      }
+    });
+
+    this.state.square_banck.forEach((x, i) => {
+      if (x > 0) {
+        if (this.is_black(B[i])) {
+          black_bank.push(i);
+        } else {
+          white_bank.push(i)
+        }
+      }
+    });
+
+    let control = (this.state.turn_black ? white : black);
+    let bank = (this.state.turn_black ? white_bank : black_bank);
+    control.forEach((i) => {
+      if ((this.can_control_checked(squares, i, this.can_control(i, true, true, squares), true, !this.state.turn_black)).length > 0) {
+        checkmate = false
+      }
+    });
+    bank.forEach((i) => {
+      if ((this.can_control_checked(squares, i, this.can_position(i, squares), false, !this.state.turn_black)).length > 0) {
+        checkmate = false
+      }
+    })
+    return checkmate;
+  }
+
+  can_control_checked(squares: string[], i: number, temp_control: number[], in_board: boolean = true, isblak: boolean = true): number[] {
     //let temp_control: number[] = this.can_control(i, true, true, squares);
     let can_control: number[] = [];
-    let isblak: boolean = this.state.turn_black;
+    //let isblak: boolean = this.state.turn_black;
     temp_control.forEach((f: number) => {
       let future = squares.slice();
       if (in_board) {
@@ -222,7 +300,7 @@ class Board extends React.Component<IProps_Board, IState_Board> {
   handleClickBank(i: number): void {
     if (this.state.square_banck[i] > 0 && this.is_black(B[i]) === this.state.turn_black) {
       this.setState({ selected_bank: i, selected: -1, });
-      this.setState({ can_control: this.can_control_checked(this.state.squares, i, this.can_position(i, this.state.squares), false) });
+      this.setState({ can_control: this.can_control_checked(this.state.squares, i, this.can_position(i, this.state.squares), false, this.state.turn_black) });
     } else {
       this.setState({
         selected_bank: -1,
