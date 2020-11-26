@@ -23,3 +23,9 @@ debug.log
 yarn-debug.log*
 yarn-error.log*
 yarn.lock
+package-lock.json
+
+#Docker
+# docker*
+# /nginx/
+# .dockerignore
