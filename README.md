@@ -2,7 +2,7 @@
 
 Projeto divertido para aprender React
 
-![](board.png)
+![](front-end/board.png)
 
 ## Objetivos
 
